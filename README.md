@@ -37,9 +37,13 @@ The `dist/` folder is ready for:
 
 ## Scripts
 
+### NPM Scripts
 - `npm run dev` — Start dev server
 - `npm run build` — Create production build
 - `npm run preview` — Preview production locally
+
+### Utility Scripts
+- `./scripts/delete-workflow-runs.sh` — Delete all GitHub Actions workflow runs (see [scripts/README.md](scripts/README.md))
 
 ## Tech Stack
 
