@@ -1,0 +1,26 @@
+name: Test Azure OIDC Authentication
+
+# Manual trigger for testing
+on:
+  workflow_dispatch:
+
+jobs:
+  test-azure-login:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout (optional for this test)
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Login to Azure using OIDC
+      - name: Azure Login via OIDC
+        uses: azure/login@v1
+        with:
+          enable-oidc: true
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Verify authentication by showing account info
+      - name: Verify Azure Login
+        run: |
+          echo "Logged in successfully. Current Azure account:"
+          az account show
