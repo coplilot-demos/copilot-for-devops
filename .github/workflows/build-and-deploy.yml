@@ -33,13 +33,12 @@ jobs:
             - name: Build
               run: npm run build --if-present
 
-            - name: Upload pages artifact
-              # Upgrade to a newer release that does not depend on the deprecated
-              # `actions/upload-artifact@v3`. Use the latest minor/major available
-              # in this repo — bumping to @v3 so the action uses newer upload-artifact.
-              uses: actions/upload-pages-artifact@v3
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
               with:
+                  name: pages-artifact
                   path: ./dist
+                  retention-days: 1
 
     deploy:
         needs: build
@@ -48,6 +47,12 @@ jobs:
         environment:
             name: github-pages
         steps:
+            - name: Download artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: pages-artifact
+                  path: ./dist
+
             - name: Deploy to GitHub Pages
               id: deployment
               uses: actions/deploy-pages@v2
