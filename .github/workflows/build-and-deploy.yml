@@ -1,8 +1,8 @@
-name: Build and Deploy (GitHub Pages - artifact deploy)
+name: Build and Deploy to GitHub Pages
 
-# Use the modern Pages deployment flow:
-# 1) Build the site and upload the static files as a Pages artifact (upload-pages-artifact)
-# 2) Deploy the uploaded artifact with actions/deploy-pages (no gh-pages branch required)
+# Simplified, modern Pages deployment:
+# 1) Build app and upload artifact with actions/upload-artifact@v4
+# 2) Download artifact and deploy with actions/deploy-pages@v1
 
 on:
     push:
@@ -10,15 +10,14 @@ on:
     pull_request:
         branches: [main]
 
-# Grant only the permissions required for Pages deployment
 permissions:
-    contents: read # not writing repo contents
-    pages: write # allow deployment to Pages
-    id-token: write # required by deploy-pages action for authentication
+    contents: read
+    pages: write
+    id-token: write
 
 jobs:
     build_and_upload:
-        name: Build and upload Pages artifact
+        name: Build and upload artifact
         runs-on: ubuntu-latest
         steps:
             # Checkout code
@@ -39,23 +38,30 @@ jobs:
             - name: Build
               run: npm run build
 
-            # Upload the build output as a Pages artifact (used by deploy job)
-            - name: Upload Pages artifact
-              uses: actions/upload-pages-artifact@v1
+            # Upload the build output as artifact (modern v4, non-deprecated)
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
               with:
+                  name: pages-build
                   path: ./dist
 
     deploy:
-        name: Deploy to GitHub Pages (Pages action)
+        name: Deploy to GitHub Pages
         needs: build_and_upload
         runs-on: ubuntu-latest
-        # The deploy action requires pages: write and id-token: write permissions
         steps:
-            # Deploy the artifact uploaded by the previous job
+            # Download the artifact from the previous job
+            - name: Download artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: pages-build
+                  path: ./dist
+
+            # Deploy to GitHub Pages
             - name: Deploy to GitHub Pages
               uses: actions/deploy-pages@v1
 
-            # Optional: Print expected published URL (final URL is shown in the Pages deployment summary)
+            # Optional: Print expected published URL
             - name: Print published URL
               run: |
                   echo "Pages site: https://$GITHUB_REPOSITORY_OWNER.github.io/${GITHUB_REPOSITORY##*/}/"
