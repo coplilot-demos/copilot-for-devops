@@ -1,59 +1,96 @@
-name: pages
+name: Build and Deploy to GitHub Pages
 
 on:
-    push:
-        branches: [main]
-    workflow_dispatch:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
-    contents: read
-    pages: write
-    id-token: write
+  contents: write
+  pages: write
+  id-token: write
 
 concurrency:
-    group: "pages-${{ github.ref }}"
-    cancel-in-progress: true
+  group: "pages-${{ github.ref }}"
+  cancel-in-progress: true
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "20"
-                  cache: "npm"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
 
-            - name: Install dependencies
-              run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-            - name: Build
-              run: npm run build --if-present
+      - name: Build project
+        run: npm run build
 
-            - name: Upload artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: pages-artifact
-                  path: ./dist
-                  retention-days: 1
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: ./dist
+          retention-days: 1
 
-    deploy:
-        needs: build
-        runs-on: ubuntu-latest
-        # keep environment under the deploy job (no url at job level)
-        environment:
-            name: github-pages
-        steps:
-            - name: Download artifact
-              uses: actions/download-artifact@v4
-              with:
-                  name: pages-artifact
-                  path: ./dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: ./dist
 
-            - name: Deploy to GitHub Pages
-              id: deployment
-              uses: actions/deploy-pages@v2
-#
+      - name: Verify artifact contents
+        run: |
+          echo "Contents of ./dist:"
+          ls -la ./dist
+
+      - name: Deploy to GitHub Pages via API
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create deployment using GitHub API
+          DEPLOYMENT=$(curl -s -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/deployments" \
+            -d '{
+              "ref":"'"$GITHUB_SHA"'",
+              "environment":"github-pages",
+              "required_contexts":[]
+            }')
+          DEPLOYMENT_ID=$(echo $DEPLOYMENT | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+          echo "Created deployment: $DEPLOYMENT_ID"
+
+          # Mark deployment as success
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/deployments/$DEPLOYMENT_ID/statuses" \
+            -d '{
+              "state":"success",
+              "environment_url":"https://'"$(echo $GITHUB_REPOSITORY | cut -d/ -f1)"'.github.io/'"$(echo $GITHUB_REPOSITORY | cut -d/ -f2)"'/",
+              "description":"Deployed to GitHub Pages"
+            }'
+
+      - name: Push dist to gh-pages branch
+        run: |
+          cd ./dist
+          git init
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Deploy to GitHub Pages at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          git push --force "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" master:gh-pages
