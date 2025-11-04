@@ -40,22 +40,22 @@ jobs:
             - name: Upload Pages artifact
               uses: actions/upload-pages-artifact@v2
               with:
-                path: './dist'
+                  path: "./dist"
 
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: build_and_upload
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      # Deploy the uploaded artifact
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+    deploy:
+        name: Deploy to GitHub Pages
+        needs: build_and_upload
+        runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            # Deploy the uploaded artifact
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v2
 
-      # Print deployed URL
-      - name: Print published URL
-        run: |
-          echo "Pages site: ${{ steps.deployment.outputs.page_url }}"
+            # Print deployed URL
+            - name: Print published URL
+              run: |
+                  echo "Pages site: ${{ steps.deployment.outputs.page_url }}"
