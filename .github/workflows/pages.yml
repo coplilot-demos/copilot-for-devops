@@ -1,65 +1,70 @@
 name: Deploy to GitHub Pages
 
-# Trigger on push to default branch or manual run
 on:
-  push:
-    branches: ["main"]
-  workflow_dispatch:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
 
-# Allow only one concurrent deployment
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
-# Set permissions for GitHub token
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+    contents: read
+    pages: write
+    id-token: write
+
+concurrency:
+    group: pages
+    cancel-in-progress: false
 
 jobs:
-  # Build job: compile static files
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      # Checkout repository code
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    # Build job: compile the frontend application
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            # Checkout the repository code
+            - name: Checkout repository
+              uses: actions/checkout@v4
 
-      # Setup Node.js environment
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
+            # Detect Node.js version from package.json engines field
+            - name: Detect Node.js version
+              id: node-version
+              run: |
+                  NODE_VERSION=$(grep '"node"' package.json | grep -oP '>=\K[0-9]+' | head -1)
+                  echo "version=$NODE_VERSION" >> $GITHUB_OUTPUT
 
-      # Install dependencies
-      - name: Install dependencies
-        run: npm install
+            # Setup Node.js with the detected version
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ steps.node-version.outputs.version }}
+                  cache: npm
 
-      # Build static site
-      - name: Build site
-        run: npm run build
+            # Install project dependencies
+            - name: Install dependencies
+              run: npm ci
 
-      # Configure GitHub Pages with artifact retention
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+            # Build the Vite project
+            - name: Build project
+              run: npm run build
 
-      # Upload dist folder as Pages artifact
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: 'dist'
+            # Configure GitHub Pages settings
+            - name: Setup GitHub Pages
+              uses: actions/configure-pages@v4
 
-  # Deploy job: publish artifact to GitHub Pages
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      # Deploy Pages artifact
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+            # Upload the build output as a Pages artifact
+            - name: Upload artifact to Pages
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  path: dist
+
+    # Deploy job: publish the artifact to GitHub Pages
+    deploy:
+        needs: build
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        runs-on: ubuntu-latest
+        steps:
+            # Deploy the Pages artifact
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4
