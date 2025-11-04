@@ -34,16 +34,19 @@ jobs:
               run: npm run build --if-present
 
             - name: Upload pages artifact
-              uses: actions/upload-pages-artifact@v2
+              # Upgrade to a newer release that does not depend on the deprecated
+              # `actions/upload-artifact@v3`. Use the latest minor/major available
+              # in this repo — bumping to @v3 so the action uses newer upload-artifact.
+              uses: actions/upload-pages-artifact@v3
               with:
                   path: ./dist
 
     deploy:
         needs: build
         runs-on: ubuntu-latest
+        # keep environment under the deploy job (no url at job level)
         environment:
             name: github-pages
-            url: ${{ steps.deployment.outputs.page_url }}
         steps:
             - name: Deploy to GitHub Pages
               id: deployment
