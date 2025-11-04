@@ -2,7 +2,7 @@ name: pages
 
 on:
     push:
-        branches: [master]
+        branches: [main]
     workflow_dispatch:
 
 permissions:
@@ -34,7 +34,7 @@ jobs:
               run: npm run build --if-present
 
             - name: Upload pages artifact
-              uses: actions/upload-pages-artifact@v3
+              uses: actions/upload-pages-artifact@v2
               with:
                   path: ./dist
 
@@ -47,4 +47,4 @@ jobs:
         steps:
             - name: Deploy to GitHub Pages
               id: deploy
-              uses: actions/deploy-pages@v4
+              uses: actions/deploy-pages@v2
