@@ -1,0 +1,53 @@
+# GitHub Actions workflow for deploying to GitHub Pages using the modern Pages model
+# This workflow builds the app and deploys it to GitHub Pages
+
+name: Deploy to GitHub Pages
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            # Checkout the repository
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            # Set up Node.js using versions from package.json
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "23.11.1"
+                  cache: "npm"
+
+            # Install dependencies
+            - name: Install dependencies
+              run: npm ci
+
+            # Build the project
+            - name: Build project
+              run: npm run build
+
+            # Upload build output as Pages artifact
+            - name: Upload Pages artifact
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  path: dist
+
+    deploy:
+        needs: build # Only run after build job
+        runs-on: ubuntu-latest
+        permissions:
+            pages: write # To deploy to Pages
+            id-token: write # To verify the deployment
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            # Deploy the artifact to GitHub Pages
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4
