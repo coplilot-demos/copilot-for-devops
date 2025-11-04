@@ -1,22 +1,33 @@
-name: Test Azure SP Login
+name: Test Azure OIDC Login
 
 on:
   workflow_dispatch:
 
-jobs:
-  test-login:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+# Required permissions for OIDC
+permissions:
+  id-token: write
+  contents: read
 
-      - name: Azure Login
+jobs:
+  test-azure-login:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout repo (optional, but recommended)
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Azure login via OIDC using your stored secrets
+      - name: Azure Login via OIDC
         uses: azure/login@v2
         with:
-          auth-type: service-principal
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          auth-type: SERVICE_PRINCIPAL
 
+      # Step 3: Verify login
       - name: Verify Azure Login
-        run: az account show
+        run: |
+          echo "Logged in successfully. Current Azure account:"
+          az account show
