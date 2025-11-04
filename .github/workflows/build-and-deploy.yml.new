@@ -1,0 +1,61 @@
+name: Build and Deploy (GitHub Pages - artifact deploy)
+
+# Use the modern Pages deployment flow:
+# 1) Build the site and upload the static files as a Pages artifact (upload-pages-artifact)
+# 2) Deploy the uploaded artifact with actions/deploy-pages (no gh-pages branch required)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Grant only the permissions required for Pages deployment
+permissions:
+  contents: read    # not writing repo contents
+  pages: write      # allow deployment to Pages
+  id-token: write   # required by deploy-pages action for authentication
+
+jobs:
+  build_and_upload:
+    name: Build and upload Pages artifact
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Set up Node.js (Vite requires Node >= 20.19)
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+
+      # Install dependencies (requires package-lock.json to be committed)
+      - name: Install dependencies
+        run: npm ci
+
+      # Build the app (expected to output to ./dist)
+      - name: Build
+        run: npm run build
+
+      # Upload the build output as a Pages artifact (used by deploy job)
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./dist
+
+  deploy:
+    name: Deploy to GitHub Pages (Pages action)
+    needs: build_and_upload
+    runs-on: ubuntu-latest
+    # The deploy action requires pages: write and id-token: write permissions
+    steps:
+      # Deploy the artifact uploaded by the previous job
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
+
+      # Optional: Print expected published URL (final URL is shown in the Pages deployment summary)
+      - name: Print published URL
+        run: |
+          echo "Pages site: https://$GITHUB_REPOSITORY_OWNER.github.io/${GITHUB_REPOSITORY##*/}/"

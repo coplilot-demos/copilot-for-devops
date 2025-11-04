@@ -23,11 +23,11 @@ jobs:
         steps:
             # Checkout code
             - name: Checkout
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
 
             # Set up Node.js (Vite requires Node >= 20.19)
             - name: Set up Node.js
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v4
               with:
                   node-version: "20.19.0"
 
@@ -55,7 +55,7 @@ jobs:
             - name: Deploy to GitHub Pages
               uses: actions/deploy-pages@v1
 
-            # Optional: Verify deployment status (this step waits for Pages to finish and publishes URL)
+            # Optional: Print expected published URL (final URL is shown in the Pages deployment summary)
             - name: Print published URL
               run: |
                   echo "Pages site: https://$GITHUB_REPOSITORY_OWNER.github.io/${GITHUB_REPOSITORY##*/}/"
