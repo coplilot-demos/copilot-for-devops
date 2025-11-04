@@ -1,56 +1,53 @@
-name: Build and Deploy to GitHub Pages
 
+name: Build and Deploy
+
+# Trigger workflow on push or pull request to main branch
 on:
-    push:
-        branches:
-            - main
-    pull_request:
-        branches:
-            - main
+	push:
+		branches: [main]
+	pull_request:
+		branches: [main]
 
 jobs:
-    build_job:
-        name: Build App
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              # Fetches the code from the repository
-            - name: Set up Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "18"
-              # Sets up Node.js environment
-            - name: Install dependencies
-              run: npm ci
-              # Installs dependencies using clean install
-            - name: Build app
-              run: npm run build
-              # Builds the application
-            - name: Upload build artifacts
-              uses: actions/upload-artifact@v4
-              with:
-                  name: dist
-                  path: dist
-              # Uploads the build output for use in deploy_job
+	build_job:
+		name: Build App # Build job
+		runs-on: ubuntu-latest
+		steps:
+			# Checkout repository code
+			- uses: actions/checkout@v3
+			# Set up Node.js environment
+			- name: Set up Node.js
+				uses: actions/setup-node@v3
+				with:
+					node-version: '18'
+			# Install dependencies
+			- name: Install dependencies
+				run: npm ci
+			# Build the app
+			- name: Build app
+				run: npm run build
 
-    deploy_job:
-        name: Deploy to GitHub Pages
-        needs: build_job
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              # Fetches the code again for deployment
-            - name: Download build artifacts
-              uses: actions/download-artifact@v4
-              with:
-                  name: dist
-                  path: dist
-              # Downloads the build output from build_job
-            - name: Deploy to GitHub Pages
-              uses: peaceiris/actions-gh-pages@v4
-              with:
-                  github_token: ${{ secrets.GITHUB_TOKEN }}
-                  publish_dir: ./dist
-              # Publishes the build output to GitHub Pages
+	deploy_job:
+		name: Deploy to GitHub Pages # Deploy job
+		needs: build_job # Depends on build_job
+		runs-on: ubuntu-latest
+		steps:
+			# Checkout repository code
+			- uses: actions/checkout@v3
+			# Set up Node.js environment
+			- name: Set up Node.js
+				uses: actions/setup-node@v3
+				with:
+					node-version: '18'
+			# Install dependencies
+			- name: Install dependencies
+				run: npm ci
+			# Build the app
+			- name: Build app
+				run: npm run build
+			# Deploy to GitHub Pages
+			- name: Deploy to GitHub Pages
+				uses: peaceiris/actions-gh-pages@v4
+				with:
+					github_token: ${{ secrets.GITHUB_TOKEN }}
+					publish_dir: ./dist
