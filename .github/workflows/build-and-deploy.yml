@@ -1,5 +1,10 @@
 name: Build and Deploy
 
+# Grant the workflow permission to push to the repo (required for gh-pages deploy)
+permissions:
+    contents: write
+    pages: write
+
 # Trigger workflow on push or pull request to main branch
 
 on:
@@ -13,8 +18,10 @@ jobs:
         name: Build App # Build job
         runs-on: ubuntu-latest
         steps:
-            # Checkout repository code
+            # Checkout repository code (keep credentials so `git push` works)
             - uses: actions/checkout@v3
+              with:
+                  persist-credentials: true
             # Set up Node.js environment
             - name: Set up Node.js
               uses: actions/setup-node@v3
@@ -32,8 +39,10 @@ jobs:
         needs: build_job # Depends on build_job
         runs-on: ubuntu-latest
         steps:
-            # Checkout repository code
+            # Checkout repository code (keep credentials so `git push` works)
             - uses: actions/checkout@v3
+              with:
+                  persist-credentials: true
             # Set up Node.js environment
             - name: Set up Node.js
               uses: actions/setup-node@v3
