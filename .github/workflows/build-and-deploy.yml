@@ -6,7 +6,7 @@ on:
     workflow_dispatch:
 
 permissions:
-    contents: write
+    contents: read
     pages: write
     id-token: write
 
@@ -18,10 +18,10 @@ jobs:
     build:
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout code
+            - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Set up Node.js
+            - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
                   node-version: "20"
@@ -30,35 +30,21 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            - name: Build project
-              run: npm run build
+            - name: Build
+              run: npm run build --if-present
 
-            - name: Upload build artifact
-              uses: actions/upload-artifact@v4
+            - name: Upload pages artifact
+              uses: actions/upload-pages-artifact@v3
               with:
-                  name: dist
                   path: ./dist
-                  retention-days: 1
 
     deploy:
         needs: build
         runs-on: ubuntu-latest
         environment:
             name: github-pages
+            url: ${{ steps.deploy.outputs.page_url }}
         steps:
-            - name: Download build artifact
-              uses: actions/download-artifact@v4
-              with:
-                  name: dist
-                  path: ./dist
-
             - name: Deploy to GitHub Pages
-              run: |
-                  cd ./dist
-                  git init
-                  git config user.name "GitHub Actions"
-                  git config user.email "actions@github.com"
-                  git add .
-                  git commit -m "Deploy to GitHub Pages at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-                  git push --force "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:gh-pages
-                  echo "✅ Successfully deployed to gh-pages branch"
+              id: deploy
+              uses: actions/deploy-pages@v4
