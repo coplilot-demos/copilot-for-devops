@@ -12,7 +12,7 @@
 
 set -e
 
-REPO="${GITHUB_REPOSITORY:-coplilot-demos/copilot-for-devops}"
+REPO="${GITHUB_REPOSITORY:-copilot-demos/copilot-for-devops}"
 
 # Check if GH_TOKEN is set
 if [ -z "$GH_TOKEN" ]; then
@@ -28,7 +28,8 @@ run_count=0
 deleted_count=0
 failed_count=0
 
-gh api "repos/$REPO/actions/runs" --paginate --jq '.workflow_runs[].id' | while read -r run_id; do
+# Use process substitution to preserve counter values
+while read -r run_id; do
     ((run_count++))
     echo "Deleting workflow run: $run_id"
     
@@ -39,7 +40,7 @@ gh api "repos/$REPO/actions/runs" --paginate --jq '.workflow_runs[].id' | while 
         ((failed_count++))
         echo "  ✗ Failed to delete run $run_id (may require admin permissions)"
     fi
-done
+done < <(gh api "repos/$REPO/actions/runs" --paginate --jq '.workflow_runs[].id')
 
 echo ""
 echo "Summary:"
